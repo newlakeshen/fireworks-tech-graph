@@ -383,6 +383,70 @@ def normalize_text(value: object) -> str:
     return escape(str(value)) if value is not None else ""
 
 
+def estimate_text_width(text: object, font_size: float, weight: int = 400, letter_spacing: float = 0.0) -> float:
+    raw = str(text or "")
+    if not raw:
+        return 0.0
+
+    width = 0.0
+    for char in raw:
+        codepoint = ord(char)
+        if char.isspace():
+            width += font_size * 0.32
+        elif codepoint < 128:
+            width += font_size * 0.56
+        else:
+            width += font_size * 0.98
+
+    width += max(len(raw) - 1, 0) * letter_spacing
+    if weight >= 600:
+        width *= 1.04
+    return width
+
+
+def user_avatar_layout(node_data: Dict[str, object], style: Dict[str, object]) -> Dict[str, float]:
+    x = to_float(node_data.get("x"))
+    width = to_float(node_data.get("width", 180))
+
+    icon_radius = 18.0
+    icon_center_x = x + 26.0
+    text_gap = 12.0
+    text_left = icon_center_x + icon_radius + text_gap
+    right_padding = 16.0
+
+    title_width = estimate_text_width(node_data.get("label", ""), 18, weight=700)
+    subtitle_width = estimate_text_width(node_data.get("sublabel", ""), 12, weight=500)
+    text_block_width = max(title_width, subtitle_width)
+    min_width = max(width, text_left - x + text_block_width + right_padding)
+
+    type_label = str(node_data.get("type_label", "") or "").strip()
+    if type_label:
+        type_width = estimate_text_width(
+            type_label,
+            to_float(style_value(style, "type_label_size")),
+            weight=700,
+            letter_spacing=to_float(style_value(style, "type_label_size")) * 0.08,
+        )
+        min_width = max(min_width, text_left - x + type_width + right_padding)
+
+    content_right = x + min_width - right_padding
+    return {
+        "width": min_width,
+        "icon_radius": icon_radius,
+        "icon_center_x": icon_center_x,
+        "text_left": text_left,
+        "content_center_x": (text_left + content_right) / 2,
+    }
+
+
+def prepare_node_data(node_data: Dict[str, object], style: Dict[str, object]) -> Dict[str, object]:
+    prepared = dict(node_data)
+    kind = str(prepared.get("kind", prepared.get("shape", "rect")))
+    if kind == "user_avatar":
+        prepared["width"] = round(user_avatar_layout(prepared, style)["width"], 2)
+    return prepared
+
+
 def parse_style(raw: object) -> Tuple[int, Dict[str, object]]:
     if raw is None:
         index = 1
@@ -585,42 +649,24 @@ def render_blueprint_title_block(
     title = normalize_text(block.get("title", data.get("title", "")))
     subtitle = normalize_text(block.get("subtitle", "SYSTEM ARCHITECTURE"))
     left_caption = normalize_text(block.get("left_caption", "REV: 1.0"))
-    center_caption = normalize_text(block.get("center_caption", "AUTO-GENERATED"))
-    right_caption = normalize_text(block.get("right_caption", "DWG: ARCH-001"))
-    stroke = str(block.get("stroke", style_value(style, "section_stroke")))
-    fill = str(block.get("fill", "#0b3552"))
+    center_caption = normalize_text(block.get("center_caption", "STATUS: ACTIVE"))
+    right_caption = normalize_text(block.get("right_caption", "DRAWN BY AI"))
     title_fill = str(block.get("title_fill", style_value(style, "text_primary")))
+    muted_fill = str(block.get("muted_fill", style_value(style, "text_secondary")))
     sub_fill = str(block.get("subtitle_fill", style_value(style, "section_label_fill")))
-    muted_fill = str(block.get("muted_fill", style_value(style, "text_muted")))
     lines = [
-        f'  <rect x="{x}" y="{y}" width="{block_width}" height="{block_height}" fill="{fill}" stroke="{stroke}" stroke-width="1.2"/>',
-        f'  <line x1="{x}" y1="{y + 18}" x2="{x + block_width}" y2="{y + 18}" stroke="{stroke}" stroke-width="1"/>',
-        f'  <line x1="{x}" y1="{y + 54}" x2="{x + block_width}" y2="{y + 54}" stroke="{stroke}" stroke-width="1"/>',
-        f'  <text x="{x + block_width / 2}" y="{y + 13}" text-anchor="middle" font-size="10" font-weight="600" fill="{muted_fill}">{subtitle}</text>',
-        f'  <text x="{x + block_width / 2}" y="{y + 42}" text-anchor="middle" font-size="18" font-weight="700" fill="{title_fill}">{title}</text>',
-        f'  <text x="{x + 12}" y="{y + 75}" font-size="9.5" font-weight="600" fill="{muted_fill}">{left_caption}</text>',
-        f'  <text x="{x + block_width / 2}" y="{y + 75}" text-anchor="middle" font-size="9.5" font-weight="600" fill="{sub_fill}">{center_caption}</text>',
+        f'  <rect x="{x}" y="{y}" width="{block_width}" height="{block_height}" rx="10" fill="#0b3b5e" stroke="#67e8f9" stroke-width="1.5" opacity="0.95"/>',
+        f'  <line x1="{x}" y1="{y + 22}" x2="{x + block_width}" y2="{y + 22}" stroke="#67e8f9" stroke-opacity="0.45" stroke-width="1"/>',
+        f'  <line x1="{x}" y1="{y + 60}" x2="{x + block_width}" y2="{y + 60}" stroke="#67e8f9" stroke-opacity="0.28" stroke-width="1"/>',
+        f'  <line x1="{x + 86}" y1="{y + 60}" x2="{x + 86}" y2="{y + block_height}" stroke="#67e8f9" stroke-opacity="0.28" stroke-width="1"/>',
+        f'  <line x1="{x + block_width - 72}" y1="{y + 60}" x2="{x + block_width - 72}" y2="{y + block_height}" stroke="#67e8f9" stroke-opacity="0.28" stroke-width="1"/>',
+        f'  <text x="{x + 14}" y="{y + 13}" font-size="10" font-weight="600" fill="{muted_fill}">{subtitle}</text>',
+        f'  <text x="{x + 14}" y="{y + 44}" font-size="18" font-weight="700" fill="{title_fill}">{title}</text>',
+        f'  <text x="{x + 14}" y="{y + 75}" font-size="9.5" font-weight="600" fill="{muted_fill}">{left_caption}</text>',
+        f'  <text x="{x + 100}" y="{y + 75}" font-size="9.5" font-weight="600" fill="{sub_fill}">{center_caption}</text>',
         f'  <text x="{x + block_width - 12}" y="{y + 75}" text-anchor="end" font-size="9.5" font-weight="600" fill="{muted_fill}">{right_caption}</text>',
     ]
     return "\n".join(lines), rectangle_bounds(x - 6, y - 6, block_width + 12, block_height + 12)
-
-
-def infer_shape(kind: str) -> str:
-    mapping = {
-        "rect": "rect",
-        "double_rect": "rect",
-        "cylinder": "rect",
-        "document": "rect",
-        "folder": "rect",
-        "terminal": "rect",
-        "hexagon": "rect",
-        "circle_cluster": "cluster",
-        "user_avatar": "rect",
-        "bot": "rect",
-        "speech": "rect",
-        "icon_box": "rect",
-    }
-    return mapping.get(kind, "rect")
 
 
 def node_bounds(data: Dict[str, object]) -> Bounds:
@@ -648,6 +694,28 @@ def normalize_node(node_data: Dict[str, object], fallback_id: str) -> Node:
         cx=(left + right) / 2,
         cy=(top + bottom) / 2,
     )
+
+
+def infer_shape(kind: str) -> str:
+    mapping = {
+        "rect": "rect",
+        "double_rect": "rect",
+        "terminal": "rect",
+        "document": "document",
+        "folder": "folder",
+        "speech": "speech",
+        "hexagon": "hexagon",
+        "agent": "hexagon",
+        "memory": "cylinder",
+        "cylinder": "cylinder",
+        "circle": "circle",
+        "circle_cluster": "circle_cluster",
+        "user_avatar": "rect",
+        "bot": "rect",
+        "cloud": "rect",
+        "icon_box": "rect",
+    }
+    return mapping.get(kind, "rect")
 
 
 def anchor_on_side(node: Node, side: str) -> Point:
@@ -697,25 +765,9 @@ def segment_hits_bounds(p1: Point, p2: Point, bounds: Bounds) -> bool:
     left, top, right, bottom = bounds
     eps = 1e-6
 
-    if abs(y1 - y2) < eps:
-        y = y1
-        if not (top + eps < y < bottom - eps):
-            return False
-        seg_left = min(x1, x2)
-        seg_right = max(x1, x2)
-        overlap_left = max(seg_left, left)
-        overlap_right = min(seg_right, right)
-        if overlap_right - overlap_left <= eps:
-            return False
-        if abs(overlap_left - x1) < eps and abs(overlap_right - x1) < eps:
-            return False
-        if abs(overlap_left - x2) < eps and abs(overlap_right - x2) < eps:
-            return False
-        return True
-
-    if abs(x1 - x2) < eps:
+    if abs(x1 - x2) < eps:  # vertical
         x = x1
-        if not (left + eps < x < right - eps):
+        if x <= left + eps or x >= right - eps:
             return False
         seg_top = min(y1, y2)
         seg_bottom = max(y1, y2)
@@ -726,6 +778,22 @@ def segment_hits_bounds(p1: Point, p2: Point, bounds: Bounds) -> bool:
         if abs(overlap_top - y1) < eps and abs(overlap_bottom - y1) < eps:
             return False
         if abs(overlap_top - y2) < eps and abs(overlap_bottom - y2) < eps:
+            return False
+        return True
+
+    if abs(y1 - y2) < eps:  # horizontal
+        y = y1
+        if y <= top + eps or y >= bottom - eps:
+            return False
+        seg_left = min(x1, x2)
+        seg_right = max(x1, x2)
+        overlap_left = max(seg_left, left)
+        overlap_right = min(seg_right, right)
+        if overlap_right - overlap_left <= eps:
+            return False
+        if abs(overlap_left - x1) < eps and abs(overlap_right - x1) < eps:
+            return False
+        if abs(overlap_left - x2) < eps and abs(overlap_right - x2) < eps:
             return False
         return True
 
@@ -858,35 +926,17 @@ def build_orthogonal_route(
     hint_y = [to_float(value) for value in arrow_data.get("corridor_y", [])]
     lane_x = sorted({ssx, eex, round((ssx + eex) / 2, 2), *hint_x, *[b[0] for b in expanded], *[b[2] for b in expanded]})
     lane_y = sorted({ssy, eey, round((ssy + eey) / 2, 2), *hint_y, *[b[1] for b in expanded], *[b[3] for b in expanded]})
-    if expanded:
-        left_rail = min(b[0] for b in expanded) - 24
-        right_rail = max(b[2] for b in expanded) + 24
-        top_rail = min(b[1] for b in expanded) - 24
-        bottom_rail = max(b[3] for b in expanded) + 24
-    else:
-        left_rail = min(ssx, eex) - 48
-        right_rail = max(ssx, eex) + 48
-        top_rail = min(ssy, eey) - 48
-        bottom_rail = max(ssy, eey) + 48
+    candidates: List[List[Point]] = []
 
-    candidates = [
-        [start, inner_start, inner_end, end],
-        [start, inner_start, (eex, ssy), inner_end, end],
-        [start, inner_start, (ssx, eey), inner_end, end],
-        [start, inner_start, ((ssx + eex) / 2, ssy), ((ssx + eex) / 2, eey), inner_end, end],
-        [start, inner_start, (ssx, (ssy + eey) / 2), (eex, (ssy + eey) / 2), inner_end, end],
-        [start, inner_start, (left_rail, ssy), (left_rail, eey), inner_end, end],
-        [start, inner_start, (right_rail, ssy), (right_rail, eey), inner_end, end],
-        [start, inner_start, (ssx, top_rail), (eex, top_rail), inner_end, end],
-        [start, inner_start, (ssx, bottom_rail), (eex, bottom_rail), inner_end, end],
-    ]
-    for x in lane_x:
-        candidates.append([start, inner_start, (x, ssy), (x, eey), inner_end, end])
-    for y in lane_y:
-        candidates.append([start, inner_start, (ssx, y), (eex, y), inner_end, end])
-    for x in hint_x:
-        for y in hint_y:
-            candidates.append([start, inner_start, (x, ssy), (x, y), (eex, y), inner_end, end])
+    if abs(ssy - eey) > 1e-6:
+        candidates.append([start, inner_start, (ssx, eey), inner_end, end])
+    if abs(ssx - eex) > 1e-6:
+        candidates.append([start, inner_start, (eex, ssy), inner_end, end])
+
+    for lane in lane_x:
+        candidates.append([start, inner_start, (lane, ssy), (lane, eey), inner_end, end])
+    for lane in lane_y:
+        candidates.append([start, inner_start, (ssx, lane), (eex, lane), inner_end, end])
 
     best_route: Optional[List[Point]] = None
     best_score = float("inf")
@@ -961,6 +1011,70 @@ def estimate_label_bounds(x: float, y: float, text: str) -> Bounds:
     return rectangle_bounds(x - width / 2, y - 10, width, 20)
 
 
+def side_label_bounds(container: Dict[str, object], style: Dict[str, object]) -> Optional[Bounds]:
+    side_label = str(container.get("side_label", "")).strip()
+    if not side_label:
+        return None
+
+    x = to_float(container["x"])
+    y = to_float(container["y"])
+    height = to_float(container["height"])
+    side_label_x = to_float(container.get("side_label_x", max(28, x - 18)))
+    side_label_y = to_float(container.get("side_label_y", y + height / 2))
+    side_label_size = to_float(container.get("side_label_size", 14))
+    side_label_weight = int(to_float(container.get("side_label_weight", 600), 600))
+    side_label_anchor = str(container.get("side_label_anchor", "end"))
+    label_width = estimate_text_width(side_label, side_label_size, weight=side_label_weight)
+
+    if container.get("side_label_rotate"):
+        return rectangle_bounds(
+            side_label_x - side_label_size / 2,
+            side_label_y - label_width / 2,
+            side_label_size,
+            label_width,
+        )
+
+    if side_label_anchor == "start":
+        left = side_label_x
+    elif side_label_anchor == "middle":
+        left = side_label_x - label_width / 2
+    else:
+        left = side_label_x - label_width
+    return rectangle_bounds(left, side_label_y - side_label_size / 2, label_width, side_label_size)
+
+
+def prepare_container_data(
+    container: Dict[str, object],
+    nodes_data: Sequence[Dict[str, object]],
+    style: Dict[str, object],
+    canvas_width: float,
+) -> Dict[str, object]:
+    prepared = dict(container)
+    label_bounds = side_label_bounds(prepared, style)
+    if label_bounds is None:
+        return prepared
+
+    x = to_float(prepared["x"])
+    y = to_float(prepared["y"])
+    width = to_float(prepared["width"])
+    height = to_float(prepared["height"])
+    container_bounds = (x, y, x + width, y + height)
+
+    min_node_left = canvas_width
+    for node in nodes_data:
+        node_box = node_bounds(node)
+        if bounds_intersect(node_box, container_bounds):
+            min_node_left = min(min_node_left, node_box[0])
+
+    label_left, _, label_right, _ = label_bounds
+    if label_left < 16 or label_right > min_node_left - 16:
+        prepared["side_label_rotate"] = True
+        prepared["side_label_anchor"] = "middle"
+        prepared["side_label_x"] = min(max(24.0, x - 12.0), max(24.0, min_node_left - 18.0))
+        prepared["side_label_y"] = y + height / 2
+    return prepared
+
+
 def section_header_text(container: Dict[str, object], style: Dict[str, object]) -> str:
     if container.get("header_text"):
         text = str(container.get("header_text", ""))
@@ -1001,10 +1115,16 @@ def render_section(container: Dict[str, object], style: Dict[str, object]) -> st
     if side_label:
         side_x = to_float(container.get("side_label_x", max(28, x - 18)))
         side_y = to_float(container.get("side_label_y", y + height / 2))
-        lines.append(
-            f'  <text x="{side_x}" y="{side_y}" text-anchor="{side_label_anchor}" dominant-baseline="middle" '
-            f'font-size="{side_label_size}" font-weight="{side_label_weight}" fill="{side_label_fill}">{normalize_text(side_label)}</text>'
-        )
+        if container.get("side_label_rotate"):
+            lines.append(
+                f'  <text transform="translate({side_x} {side_y}) rotate(-90)" text-anchor="middle" dominant-baseline="middle" '
+                f'font-size="{side_label_size}" font-weight="{side_label_weight}" fill="{side_label_fill}">{normalize_text(side_label)}</text>'
+            )
+        else:
+            lines.append(
+                f'  <text x="{side_x}" y="{side_y}" text-anchor="{side_label_anchor}" dominant-baseline="middle" '
+                f'font-size="{side_label_size}" font-weight="{side_label_weight}" fill="{side_label_fill}">{normalize_text(side_label)}</text>'
+            )
     return "\n".join(lines)
 
 
@@ -1053,24 +1173,68 @@ def choose_label_position_avoiding(points: Sequence[Point], text: str, occupied:
     return choose_label_position(points)
 
 
-def legend_layout(data: Dict[str, object], legend: Sequence[Dict[str, object]], width: float, height: float) -> Optional[Tuple[float, float, Bounds]]:
+def legend_layout(
+    data: Dict[str, object],
+    legend: Sequence[Dict[str, object]],
+    width: float,
+    height: float,
+    occupied: Sequence[Bounds],
+) -> Optional[Tuple[float, float, Bounds]]:
     if not legend:
         return None
-    x = to_float(data.get("legend_x", 42))
-    y = to_float(data.get("legend_y", height - (len(legend) * 22 + 34)))
     position = str(data.get("legend_position", "bottom-left"))
     max_label = max((len(str(item.get("label", ""))) for item in legend), default=12)
     block_width = 40 + max_label * 7 + 12
     block_height = len(legend) * 22 + 6
-    if position == "bottom-right":
-        x = to_float(data.get("legend_x", width - block_width - 42))
-    elif position == "top-right":
-        x = to_float(data.get("legend_x", width - block_width - 42))
-        y = to_float(data.get("legend_y", 96))
-    elif position == "top-left":
-        x = to_float(data.get("legend_x", 42))
-        y = to_float(data.get("legend_y", 96))
-    return (x, y, rectangle_bounds(x - 4, y - 10, block_width + 8, block_height + 12))
+    default_positions = {
+        "bottom-left": (42.0, height - (len(legend) * 22 + 34)),
+        "bottom-right": (width - block_width - 42, height - (len(legend) * 22 + 34)),
+        "top-left": (42.0, 96.0),
+        "top-right": (width - block_width - 42, 96.0),
+    }
+    preferred_x, preferred_y = default_positions.get(position, default_positions["bottom-left"])
+    preferred_x = to_float(data.get("legend_x", preferred_x))
+    preferred_y = to_float(data.get("legend_y", preferred_y))
+
+    def candidate_bounds(x: float, y: float) -> Bounds:
+        return rectangle_bounds(x - 4, y - 10, block_width + 8, block_height + 12)
+
+    top_limit = 96.0
+    bottom_limit = max(top_limit, height - block_height - 18)
+    x_candidates = [
+        preferred_x,
+        default_positions["bottom-left"][0],
+        default_positions["bottom-right"][0],
+    ]
+    y_candidates = [preferred_y]
+    step = 24.0
+    up = preferred_y - step
+    down = preferred_y + step
+    while up >= top_limit or down <= bottom_limit:
+        if up >= top_limit:
+            y_candidates.append(up)
+            up -= step
+        if down <= bottom_limit:
+            y_candidates.append(down)
+            down += step
+
+    seen = set()
+    for y in y_candidates:
+        for x in x_candidates:
+            key = (round(x, 2), round(y, 2))
+            if key in seen:
+                continue
+            seen.add(key)
+            bounds = candidate_bounds(x, y)
+            if bounds[0] < 12 or bounds[2] > width - 12:
+                continue
+            if bounds[1] < top_limit - 14 or bounds[3] > height - 12:
+                continue
+            if not any(bounds_intersect(bounds, other, 8) for other in occupied):
+                return (x, y, bounds)
+
+    fallback_bounds = candidate_bounds(preferred_x, preferred_y)
+    return (preferred_x, preferred_y, fallback_bounds)
 
 
 def footer_layout(data: Dict[str, object], width: float, height: float) -> Optional[Tuple[float, float, Bounds]]:
@@ -1139,6 +1303,7 @@ def render_rect_node(node: Dict[str, object], style: Dict[str, object], kind: st
     type_label = normalize_text(node.get("type_label", ""))
     accent_fill = node.get("accent_fill")
     lines = []
+    user_layout = user_avatar_layout(node, style) if kind == "user_avatar" else None
 
     if kind == "double_rect":
         lines.append(
@@ -1225,9 +1390,10 @@ def render_rect_node(node: Dict[str, object], style: Dict[str, object], kind: st
     if kind == "user_avatar":
         circle_fill = node.get("icon_fill", "#dbeafe")
         icon_stroke = node.get("icon_stroke", stroke)
-        cx = x + 26
+        cx = user_layout["icon_center_x"]
         cy = y + height / 2
-        lines.append(f'  <circle cx="{cx}" cy="{cy}" r="18" fill="{circle_fill}" stroke="{icon_stroke}" stroke-width="1.6"/>')
+        icon_radius = user_layout["icon_radius"]
+        lines.append(f'  <circle cx="{cx}" cy="{cy}" r="{icon_radius}" fill="{circle_fill}" stroke="{icon_stroke}" stroke-width="1.6"/>')
         lines.append(f'  <circle cx="{cx}" cy="{cy - 6}" r="5" fill="{icon_stroke}"/>')
         lines.append(f'  <path d="M {cx - 10} {cy + 11} Q {cx} {cy + 2} {cx + 10} {cy + 11}" fill="none" stroke="{icon_stroke}" stroke-width="2"/>')
 
@@ -1262,13 +1428,14 @@ def render_rect_node(node: Dict[str, object], style: Dict[str, object], kind: st
         title_y = y + height / 2 + 6
 
     if type_label:
-        lines.append(f'  <text x="{x + (54 if kind == "user_avatar" else width / 2)}" y="{type_offset}" text-anchor="middle" class="node-type">{type_label}</text>')
+        type_x = user_layout["content_center_x"] if kind == "user_avatar" else x + width / 2
+        lines.append(f'  <text x="{type_x}" y="{type_offset}" text-anchor="middle" class="node-type">{type_label}</text>')
         title_y += 10 if kind not in {"document", "folder", "circle_cluster", "bot"} else 0
 
     title_x = x + width / 2
     text_anchor = "middle"
     if kind == "user_avatar":
-        title_x = x + 64
+        title_x = user_layout["text_left"]
         text_anchor = "start"
     if kind == "terminal":
         title_y = y + height - 14
@@ -1399,8 +1566,10 @@ def render_legend(
     width: float,
     height: float,
     data: Dict[str, object],
+    layout: Optional[Tuple[float, float, Bounds]] = None,
 ) -> str:
-    layout = legend_layout(data, legend, width, height)
+    if layout is None:
+        layout = legend_layout(data, legend, width, height, [])
     if not layout:
         return ""
     legend_x, legend_y, _ = layout
@@ -1445,8 +1614,8 @@ def build_svg(template_type: str, data: Dict[str, object]) -> str:
             width = float(match.group(1))
             height = float(match.group(2))
 
-    containers = data.get("containers", [])
-    nodes_data = data.get("nodes", [])
+    nodes_data = [prepare_node_data(node, style) for node in data.get("nodes", [])]
+    containers = [prepare_container_data(container, nodes_data, style, width) for container in data.get("containers", [])]
     arrows_data = data.get("arrows", [])
     legend = data.get("legend", [])
 
@@ -1473,10 +1642,13 @@ def build_svg(template_type: str, data: Dict[str, object]) -> str:
             lines.append(render_section(container, style))
 
     section_obstacles = [bounds for container in containers if (bounds := container_header_bounds(container)) is not None]
-    legend_reserved = legend_layout(data, legend, width, height)
+    side_label_obstacles = [bounds for container in containers if (bounds := side_label_bounds(container, style)) is not None]
+    node_obstacles = [node.bounds for node in normalized_nodes]
+    legend_reserved = legend_layout(data, legend, width, height, node_obstacles + section_obstacles + side_label_obstacles)
     footer_reserved = footer_layout(data, width, height)
     blueprint_block_svg, blueprint_block_bounds = render_blueprint_title_block(data, style, style_index, width, height)
     reserved_bounds = list(section_obstacles)
+    reserved_bounds.extend(side_label_obstacles)
     if legend_reserved:
         reserved_bounds.append(legend_reserved[2])
     if footer_reserved:
@@ -1486,7 +1658,6 @@ def build_svg(template_type: str, data: Dict[str, object]) -> str:
 
     arrow_paths: List[str] = []
     arrow_labels: List[str] = []
-    node_obstacles = [node.bounds for node in normalized_nodes]
     route_obstacles = node_obstacles + reserved_bounds
     label_obstacles = node_obstacles + reserved_bounds
     for arrow in arrows_data:
@@ -1506,7 +1677,7 @@ def build_svg(template_type: str, data: Dict[str, object]) -> str:
 
     lines.extend(label for label in arrow_labels if label)
 
-    legend_svg = render_legend(legend, style, width, height, data)
+    legend_svg = render_legend(legend, style, width, height, data, legend_reserved)
     if legend_svg:
         lines.append(legend_svg)
 
