@@ -363,7 +363,7 @@ Useful high-leverage fields for style-specific polish:
 - **Internal docs**: Style 4 (Notion Clean) — minimal, wiki-friendly
 - **Blog posts**: Style 1 (Flat Icon) — colorful, engaging
 - **GitHub README**: Style 2 (Dark Terminal) — matches dark theme
-- **Presentations:** Style 5 (Glassmorphism) or Style 6 (Claude Official) — polished
+- **Presentations**: Style 5 (Glassmorphism) or Style 6 (Claude Official) — polished
 
 **Brand-Specific:**
 - **Anthropic/Claude projects**: Style 6 (Claude Official) — warm cream background, brand colors
@@ -413,7 +413,7 @@ Built-in pattern knowledge:
 RAG Pipeline         → Query → Embed → VectorSearch → Retrieve → LLM → Response
 Agentic RAG          → adds Agent loop + Tool use
 Agentic Search       → Query → Planner → [Search/Calc/Code] → Synthesizer
-Mem0 Memory Layer    → Input → Memory Manager → [Write: VectorDB + GraphDB] / [Read: Retrieve+Rank] → Context
+Mem0 Memory Layer    → Input → Memory Manager → [VectorDB + GraphDB] → Context
 Agent Memory Types   → Sensory → Working → Episodic → Semantic → Procedural
 Multi-Agent          → Orchestrator → [SubAgent×N] → Aggregator → Output
 Tool Call Flow       → LLM → Tool Selector → Execution → Parser → LLM (loop)
