@@ -363,7 +363,7 @@ Useful high-leverage fields for style-specific polish:
 - **Internal docs**: Style 4 (Notion Clean) — minimal, wiki-friendly
 - **Blog posts**: Style 1 (Flat Icon) — colorful, engaging
 - **GitHub README**: Style 2 (Dark Terminal) — matches dark theme
-- **Presentations**: Style 5 (Glassmorphism) or Style 6 (Claude Official) — polished
+- **Presentations:** Style 5 (Glassmorphism) or Style 6 (Claude Official) — polished
 
 **Brand-Specific:**
 - **Anthropic/Claude projects**: Style 6 (Claude Official) — warm cream background, brand colors
