@@ -1,284 +1,317 @@
 ---
 name: fireworks-tech-graph
-description: >-
-  Use when the user wants to create any technical diagram - architecture, data
-  flow, flowchart, sequence, agent/memory, or concept map - and export as
-  SVG+PNG. Trigger on: "画图" "帮我画" "生成图" "做个图" "架构图" "流程图"
-  "可视化一下" "出图" "generate diagram" "draw diagram" "visualize" or any
-  system/flow description the user wants illustrated.
+description: Use when the user wants to create any technical diagram - architecture, data flow, flowchart, sequence, agent/memory, or concept map - and export as SVG+PNG. Trigger on: "画图" "帮我画" "生成图" "做个图" "架构图" "流程图" "可视化一下" "出图" "generate diagram" "draw diagram" "visualize" or any system/flow description the user wants illustrated.
 ---
 
-# Fireworks Tech Graph
+# fireworks-tech-graph
 
 Generate production-quality SVG technical diagrams exported as PNG via `rsvg-convert`.
 
-## Install Source
+## Tool Support
 
-Install this skill from GitHub:
+You do NOT have direct access to a design tool or SVG layout engine. You must:
+- Generate or edit SVG/Markdown/templates directly using tools.
+- Use the repo's references and templates to build diagrams.
+- Validate SVG syntax before claiming success.
 
-```bash
-npx skills add yizhiyanhua-ai/fireworks-tech-graph
-```
+## When To Use
 
-Public package page:
+Use for:
+- Architecture diagrams
+- Data-flow diagrams
+- Flowcharts and decision trees
+- Sequence diagrams
+- Agent/memory diagrams
+- Concept maps / mind maps
+- Comparison matrices
+- UML diagrams (14 types supported)
 
-```text
-https://www.npmjs.com/package/@yizhiyanhua-ai/fireworks-tech-graph
-```
+Do NOT use for:
+- Charting numeric data (bar/line/pie)
+- Figma-like UI mockups
+- Photorealistic images
+- Low-effort ASCII art when a real diagram is expected
 
-Do not pass `@yizhiyanhua-ai/fireworks-tech-graph` directly to `skills add`, because the CLI expects a GitHub or local repository source.
+## Required Repo Context
 
-Update command:
+Before drawing, inspect these files as needed:
 
-```bash
-npx skills add yizhiyanhua-ai/fireworks-tech-graph --force -g -y
-```
+1. `references/icons.md`
+2. Relevant style guide(s):
+   - `references/style-1-flat-icon.md`
+   - `references/style-2-dark-terminal.md`
+   - `references/style-3-blueprint.md`
+   - `references/style-4-notion-clean.md`
+   - `references/style-5-glassmorphism.md`
+   - `references/style-6-claude-official.md`
+   - `references/style-7-openai.md`
+3. `templates/*.svg`
+4. `scripts/README.md`
 
-## Helper Scripts (Recommended)
-
-Four helper scripts in `scripts/` directory provide stable SVG generation and validation:
+## Validation Tools
 
 ### 1. `generate-diagram.sh` - Validate SVG + export PNG
 ```bash
 ./scripts/generate-diagram.sh -t architecture -s 1 -o ./output/arch.svg
 ```
-- Validates an existing SVG file
-- Exports PNG after validation
+- Validates with `validate-svg.sh`
+- Exports 1920px PNG via `rsvg-convert`
 - Example: `./scripts/generate-diagram.sh -t architecture -s 1 -o ./output/arch.svg`
 
-### 2. `generate-from-template.py` - Create starter SVG from template
+### 2. `generate-from-template.py` - Generate SVG from template + JSON
 ```bash
 python3 ./scripts/generate-from-template.py architecture ./output/arch.svg '{"title":"My Diagram","nodes":[],"arrows":[]}'
 ```
-- Loads a built-in SVG template
-- Renders nodes, arrows, and legend entries from JSON input
+- Builds an SVG directly from `templates/*.svg` and structured JSON
+- Embeds style tokens, semantic node kinds, richer arrow routing, and optional containers / legend / footer chrome
 - Escapes text content to keep output XML-valid
 
 ### 3. `validate-svg.sh` - Validate SVG syntax
 ```bash
 ./scripts/validate-svg.sh <svg-file>
 ```
-- Checks XML syntax
-- Verifies tag balance
-- Validates marker references
-- Checks attribute completeness
-- Validates path data
 
-### 4. `test-all-styles.sh` - Batch test all styles
-```bash
-./scripts/test-all-styles.sh
-```
-- Tests multiple diagram sizes
-- Validates all generated SVGs
-- Generates test report
+## Workflow
 
-**When to use scripts:**
-- Use scripts when generating complex SVGs to avoid syntax errors
-- Scripts provide automatic validation and error reporting
-- Recommended for production diagrams
+1. **Classify the request**
+   - Architecture
+   - Data flow
+   - Flowchart
+   - Sequence
+   - Agent architecture
+   - Memory architecture
+   - UML subtype if applicable
+   - Comparison / matrix
+   - Mind map
 
-**When to generate SVG directly:**
-- Simple diagrams with few elements
-- Quick prototypes
-- When you need full control over SVG structure
+2. **Choose style**
+   - Default: Style 1 (Flat Icon)
+   - Dark technical: Style 2 or 3
+   - Minimal doc-like: Style 4
+   - Brand-specific: Style 6 or 7
+   - Product keynote / polished hero: Style 5
 
-## Workflow (Always Follow This Order)
+3. **Choose output structure**
+   Use the most appropriate layout:
+   - Horizontal layered architecture
+   - Vertical process flow
+   - Swim lanes
+   - Matrix grid
+   - Radial map
+   - UML conventions
 
-1. **Classify** the diagram type (see Diagram Types below)
-2. **Extract structure** — identify layers, nodes, edges, flows, and semantic groups from user description
-3. **Plan layout** — apply the layout rules for the diagram type
-4. **Load style reference** — always load `references/style-1-flat-icon.md` unless user specifies another; load the matching `references/style-N.md` for exact color tokens and SVG patterns
-5. **Map nodes to shapes** — use Shape Vocabulary below
-6. **Check icon needs** — load `references/icons.md` for known products
-7. **Write SVG** with adaptive strategy (see SVG Generation Strategy below)
+4. **Map concepts to semantic shapes**
+   - User -> human icon
+   - LLM -> rounded rectangle, double border, lightning glyph
+   - Agent -> hexagon
+   - Memory -> dashed box / cylinder depending on type
+   - Vector store -> ringed cylinder
+   - Tool -> gear box
+   - DB / Graph -> semantic storage shape
+   - External system -> dashed rectangle
+
+5. **Write SVG or structured input**
+   - Prefer structured JSON + `generate-from-template.py` when the layout matches an existing template or regression fixture pattern. Pass node ids plus `source` / `target` in arrows so routing can anchor to real ports.
+   - Use `containers` for grouped sections / swim lanes.
+   - Use `nodes[].kind` for semantic shapes instead of drawing every primitive by hand.
+   - When drawing manual SVG, keep everything inline with no external assets.
+   - Reuse paths and tokens from `references/*.md` whenever possible.
+
+6. **Validate syntax**
+   Run:
+   ```bash
+   ./scripts/validate-svg.sh /path/to/file.svg
+   ```
+
+7. **Fix any issues**
+   - Missing closing tags
+   - Unquoted attributes
+   - Invalid entities
+   - Broken markers / ids
+
 8. **Validate**: Run `rsvg-convert file.svg -o /dev/null 2>&1` to check syntax
 9. **Export PNG**: `rsvg-convert -w 1920 file.svg -o file.png`
-10. **Report** the generated file paths
+10. **Report output files**
 
-## Diagram Types & Layout Rules
+## Diagram-Type Specific Guidance
 
 ### Architecture Diagram
-Nodes = services/components. Group into **horizontal layers** (top→bottom or left→right).
-- Typical layers: Client → Gateway/LB → Services → Data/Storage
-- Use `<rect>` dashed containers to group related services in the same layer
-- Arrow direction follows data/request flow
-- ViewBox: `0 0 960 600` standard, `0 0 960 800` for tall stacks
+Use when showing components and how they connect.
+
+Layout:
+- Prefer left-to-right or top-to-bottom layers
+- Use swim lanes if tiers are important (frontend / services / storage)
+- Keep crossing arrows minimal
+
+Required elements:
+- Clear title
+- Labeled components
+- Directional arrows
+- Optional legend if arrow colors encode meaning
 
 ### Data Flow Diagram
-Emphasizes **what data moves where**. Focus on data transformation.
-- Label every arrow with the data type (e.g., "embeddings", "query", "context")
-- Use wider arrows (`stroke-width: 2.5`) for primary data paths
-- Dashed arrows for control/trigger flows
-- Color arrows by data category (not just Agent/RAG — use semantics)
+Use when the emphasis is what data moves between systems.
 
-### Flowchart / Process Flow
-Sequential decision/process steps.
-- Top-to-bottom preferred; left-to-right for wide flows
-- Diamond shapes for decisions, rounded rects for processes, parallelograms for I/O
-- Keep node labels short (≤3 words); put detail in sub-labels
-- Align nodes on a grid: x positions snap to 120px intervals, y to 80px
+Layout:
+- Keep data transformations explicit
+- Label arrows with payloads / events / artifacts
+- Use storage icons for persistence points
 
-### Agent Architecture Diagram
-Shows how an AI agent reasons, uses tools, and manages memory.
-Key conceptual layers to always consider:
-- **Input layer**: User, query, trigger
-- **Agent core**: LLM, reasoning loop, planner
-- **Memory layer**: Short-term (context window), Long-term (vector/graph DB), Episodic
-- **Tool layer**: Tool calls, APIs, search, code execution
-- **Output layer**: Response, action, side-effects
-Use cyclic arrows (loop arcs) to show iterative reasoning. Separate memory types visually.
+### Flowchart
+Use for decision logic or operational workflows.
 
-### Memory Architecture Diagram (Mem0, MemGPT-style)
-Specialized agent diagram focused on memory operations.
-- Show memory **write path** and **read path** separately (different arrow colors)
-- Memory tiers: Working Memory → Short-term → Long-term → External Store
-- Label memory operations: `store()`, `retrieve()`, `forget()`, `consolidate()`
-- Use stacked rects or layered cylinders for storage tiers
+Conventions:
+- Diamond = decision
+- Rectangle = action
+- Rounded rectangle = start/end if appropriate
+- Label edge conditions (`yes`, `no`)
 
 ### Sequence Diagram
-Time-ordered message exchanges between participants.
-- Participants as vertical **lifelines** (top labels + vertical dashed lines)
-- Messages as horizontal arrows between lifelines, top-to-bottom time order
-- Activation boxes (thin filled rects on lifeline) show active processing
-- Group with `<rect>` loop/alt frames with label in top-left corner
-- ViewBox height = 80 + (num_messages × 50)
+Use for time-ordered interactions.
 
-### Comparison / Feature Matrix
-Side-by-side comparison of approaches, systems, or components.
-- Column headers = systems, row headers = attributes
-- Row height: 40px; column width: min 120px; header row height: 50px
-- Checked cell: tinted background (e.g. `#dcfce7`) + `✓` checkmark; unsupported: `#f9fafb` fill
-- Alternating row fills (`#f9fafb` / `#ffffff`) for readability
-- Max readable columns: 5; beyond that, split into two diagrams
+Conventions:
+- Participants across top
+- Lifelines vertical
+- Messages horizontal
+- Activation bars optional but helpful
 
-### Timeline / Gantt
-Horizontal time axis showing durations, phases, and milestones.
-- X-axis = time (weeks/months/quarters); Y-axis = items/tasks/phases
-- Bars: rounded rects, colored by category, labeled inside or beside
-- Milestone markers: diamond or filled circle at specific x position with label above
-- ViewBox: `0 0 960 400` typical; wider for many time periods: `0 0 1200 400`
+### Agent / Memory Diagram
+Use repo-specific shape vocabulary.
 
-### Mind Map / Concept Map
-Radial layout from central concept.
-- Central node at `cx=480, cy=280`
-- First-level branches: evenly distributed around center (360/N degrees)
-- Second-level branches: branch off first-level at 30-45° offset
-- Use curved `<path>` with cubic bezier for branches, not straight lines
+Typical patterns:
+- Orchestrator / Planner agent at center or top
+- Tools on one side, memory stores below or adjacent
+- Distinguish read vs write arrows
+- Highlight feedback loops and retrieval
 
-### Class Diagram (UML)
-Static structure showing classes, attributes, methods, and relationships.
-- **Class box**: 3-compartment rect (name / attributes / methods), min width 160px
-  - Top compartment: class name, bold, centered (abstract = *italic*)
-  - Middle: attributes with visibility (`+` public, `-` private, `#` protected)
-  - Bottom: method signatures, same visibility notation
-- **Relationships**:
-  - Inheritance (extends): solid line + hollow triangle arrowhead, child → parent
-  - Implementation (interface): dashed line + hollow triangle, class → interface
-  - Association: solid line + open arrowhead, label with multiplicity (1, 0..*, 1..*)
-  - Aggregation: solid line + hollow diamond on container side
-  - Composition: solid line + filled diamond on container side
-  - Dependency: dashed line + open arrowhead
-- **Interface**: `<<interface>>` stereotype above name, or circle/lollipop notation
-- **Enum**: compartment rect with `<<enumeration>>` stereotype, values in bottom
-- Layout: parent classes top, children below; interfaces to the left/right of implementors
-- ViewBox: `0 0 960 600` standard; `0 0 960 800` for deep hierarchies
+### Comparison Matrix
+Use for side-by-side capability comparison.
 
-### Use Case Diagram (UML)
-System functionality from user perspective.
-- **Actor**: stick figure (circle head + body line) placed outside system boundary
-  - Label below figure, 13-14px
-  - Primary actors on left, secondary/supporting on right
-- **Use case**: ellipse with label centered inside, min 140×60px
-  - Keep names verb phrases: "Create Order", "Process Payment"
-- **System boundary**: large rect with dashed border + system name in top-left
-- **Relationships**:
-  - Include: dashed arrow `<<include>>` from base to included use case
-  - Extend: dashed arrow `<<extend>>` from extension to base use case
-  - Generalization: solid line + hollow triangle (specialized → general)
-- Layout: system boundary centered, actors outside, use cases inside
-- ViewBox: `0 0 960 600` standard
+Conventions:
+- Rows = criteria
+- Columns = systems / approaches
+- Use check icons, dots, short phrases
+- Avoid overloading with paragraphs
 
-### State Machine Diagram (UML)
-Lifecycle states and transitions of an entity.
-- **State**: rounded rect with state name, min 120×50px
-  - Internal activities: small text `entry/ action`, `exit/ action`, `do/ activity`
-  - **Initial state**: filled black circle (r=8), one outgoing arrow
-  - **Final state**: filled circle (r=8) inside hollow circle (r=12)
-  - **Choice**: small hollow diamond, guard labels on outgoing arrows `[condition]`
-- **Transition**: arrow with optional label `event [guard] / action`
-  - Guard conditions in square brackets
-  - Actions after `/`
-- **Composite/nested state**: larger rect containing sub-states, with name tab
-- **Fork/join**: thick horizontal or vertical black bar (synchronization)
-- Layout: initial state top-left, final state bottom-right, flow top-to-bottom
-- ViewBox: `0 0 960 600` standard
+### UML Support
+All 14 UML diagram types supported. Use correct UML notation conventions:
 
-### ER Diagram (Entity-Relationship)
-Database schema and data relationships.
-- **Entity**: rect with entity name in header (bold), attributes below
-  - Primary key attribute: underlined
-  - Foreign key: italic or marked with (FK)
-  - Min width: 160px; attribute font-size: 12px
-- **Relationship**: diamond shape on connecting line
-  - Label inside diamond: "has", "belongs to", "enrolls in"
-  - Cardinality labels near entity: `1`, `N`, `0..1`, `0..*`, `1..*`
-- **Weak entity**: double-bordered rect with double diamond relationship
-- **Associative entity**: diamond + rect hybrid (rect with diamond inside)
-- Line style: solid for identifying relationships, dashed for non-identifying
-- Layout: entities in 2-3 rows, relationships between related entities
-- ViewBox: `0 0 960 600` standard; wider `0 0 1200 600` for many entities
+#### Structural UML
+- **Class Diagram**: Classes with compartments (name, attributes, methods), inheritance arrows, association lines
+- **Component Diagram**: Components as boxes with interface lollipops/sockets, dependency arrows
+- **Deployment Diagram**: Nodes as 3D boxes, artifacts inside, communication paths
+- **Package Diagram**: Package tabs, dependency arrows between packages
+- **Composite Structure**: Parts, ports, connectors within class/component boundary
+- **Object Diagram**: Object instances with underlined names, links between objects
 
-### Network Topology
-Physical or logical network infrastructure.
-- **Devices**: icon-like rects or rounded rects
-  - Router: circle with cross arrows
-  - Switch: rect with arrow grid
-  - Server: stacked rect (rack icon)
-  - Firewall: brick-pattern rect or shield shape
-  - Load Balancer: horizontal split rect with arrows
-  - Cloud: cloud path (overlapping arcs)
-- **Connections**: lines between device centers
-  - Ethernet/wired: solid line, label bandwidth
-  - Wireless: dashed line with WiFi symbol
-  - VPN: dashed line with lock icon
-- **Subnets/Zones**: dashed rect containers with zone label (DMZ, Internal, External)
-- **Labels**: device hostname + IP below, 12-13px
-- Layout: tiered top-to-bottom (Internet → Edge → Core → Access → Endpoints)
-- ViewBox: `0 0 960 600` standard
+#### Behavioral UML
+- **Use Case Diagram**: Actors as stick figures, use cases as ovals, system boundary box
+- **Activity Diagram**: Initial/final nodes, action rectangles, decision diamonds, fork/join bars
+- **State Machine**: States as rounded rectangles, transitions with event labels, initial/final pseudo-states
+- **Sequence Diagram**: Lifelines, messages, activation boxes, combined fragments
+- **Communication Diagram**: Objects + numbered messages on links
+- **Timing Diagram**: Time axis horizontal, state/value changes over time
+- **Interaction Overview**: Activity diagram with interaction use nodes
 
-## UML Coverage Map
+#### Domain-Specific
+- **ER Diagram**: Entities as rectangles, relationships as diamonds/lines, cardinality labels
 
-Full mapping of UML 14 diagram types to supported diagram types:
+## Style Guide Summary
 
-| UML Diagram | Supported As | Notes |
-|-------------|-------------|-------|
-| Class | Class Diagram | Full UML notation |
-| Component | Architecture Diagram | Use colored fills per component type |
-| Deployment | Architecture Diagram | Add node/instance labels |
-| Package | Architecture Diagram | Use dashed grouping containers |
-| Composite Structure | Architecture Diagram | Nested rects within components |
-| Object | Class Diagram | Instance boxes with underlined name |
-| Use Case | Use Case Diagram | Full actor/ellipse/relationship |
-| Activity | Flowchart / Process Flow | Add fork/join bars |
-| State Machine | State Machine Diagram | Full UML notation |
-| Sequence | Sequence Diagram | Add alt/opt/loop frames |
-| Communication | — | Approximate with Sequence (swap axes) |
-| Timing | Timeline | Adapt time axis |
-| Interaction Overview | Flowchart | Combine activity + sequence fragments |
-| ER Diagram | ER Diagram | Chen/Crow's foot notation |
+### Style 1 - Flat Icon (Default)
+- White background
+- Soft shadows
+- Colored icon accents
+- Great for docs/blogs
+
+### Style 2 - Dark Terminal
+- Dark background
+- Neon accents
+- Monospace labels
+- Great for GitHub/dev content
+
+### Style 3 - Blueprint
+- Deep blue background
+- Grid lines / blueprint feel
+- Cyan strokes
+- Great for architecture/engineering docs
+
+### Style 4 - Notion Clean
+- Minimal white background
+- Very restrained color use
+- Clean typography
+- Great for internal docs
+
+### Style 5 - Glassmorphism
+- Dark gradient background
+- Frosted cards
+- Subtle blur-like effects in SVG
+- Great for keynote / polished visuals
+
+### Style 6 - Claude Official
+- Warm cream background `#f8f6f3`
+- Anthropic-inspired palette: oranges, browns, warm grays
+- Clean, restrained, professional
+- Great for Claude/Anthropic-adjacent system diagrams
+
+### Style 7 - OpenAI Official
+- Pure white background `#ffffff`
+- OpenAI-inspired palette: greens, grays, black
+- Minimal, modern, precise
+- Great for OpenAI-adjacent API/architecture diagrams
+
+## File Structure
+
+- `references/` -> style guides + icons
+- `templates/` -> reusable starter SVGs
+- `scripts/` -> validation/export helpers
+
+## Quality Bar
+
+Every delivered diagram should be:
+- Readable at a glance
+- Semantically organized
+- Visually consistent with the chosen style
+- Free of SVG syntax errors
+- Exported successfully to PNG when required
+
+If the user gives a rough description, infer a sane structure. If the diagram could reasonably be interpreted multiple ways, pick the clearest one rather than overcomplicating it.
+
+## Layout & Composition Rules
+
+These rules matter more than decorative flourish.
+
+### Architecture / AI-Agent diagrams
+- Use 3 to 5 major zones max.
+- Align to a grid.
+- Keep primary flow obvious in one direction.
+- Minimize line crossings.
+- Use consistent node widths within the same layer.
+- Reserve large titles and legends for the outer frame, not the core flow.
+
+### Comparison / matrix diagrams
+- Max 6 columns before readability collapses.
+- Keep row labels short.
+- Use subtle separators rather than heavy full-table borders.
+- Highlight only the most important differences.
+
+### Sequence / flow diagrams
+- Vertical spacing should clearly communicate progression.
+- Decision labels must sit near their branch arrows.
+- Don’t route arrows through labels or shapes.
 
 ## Shape Vocabulary
 
-Map semantic concepts to consistent shapes across all diagram types:
+Use these defaults unless the user explicitly asks otherwise.
 
 | Concept | Shape | Notes |
-|---------|-------|-------|
-| User / Human | Circle + body path | Stick figure or avatar |
-| LLM / Model | Rounded rect with brain/spark icon or gradient fill | Use accent color |
-| Agent / Orchestrator | Hexagon or rounded rect with double border | Signals "active controller" |
-| Memory (short-term) | Rounded rect, dashed border | Ephemeral = dashed |
-| Memory (long-term) | Cylinder (database shape) | Persistent = solid cylinder |
-| Vector Store | Cylinder with grid lines inside | Add 3 horizontal lines |
+|---|---|---|
+| User / Human | human icon or circle avatar | |
+| LLM / Model | rounded rect with double border + bolt | |
+| Agent / Planner / Orchestrator | hexagon | |
+| Short-term memory | dashed rounded rect | |
+| Long-term memory | cylinder | |
+| Vector store | cylinder with ring lines inside | Add 2-3 concentric ellipses |
 | Graph DB | Circle cluster (3 overlapping circles) | |
 | Tool / Function | Gear-like rect or rect with wrench icon | |
 | API / Gateway | Hexagon (single border) | |
@@ -400,8 +433,8 @@ rsvg-convert file.svg -o /tmp/test.png 2>&1 && echo "✓ Valid" && rm /tmp/test.
 
 ## Output
 
-- **Default**: `./[derived-name].svg` and `./[derived-name].png` in current directory
-- **Custom**: user specifies path with `--output /path/` or `输出到 /path/`
+- **Default**: `/Users/bytedance/Downloads/[derived-name].svg` and `/Users/bytedance/Downloads/[derived-name].png`
+- **Custom**: user specifies file or directory path with `--output /path/` or `输出到 /path/`
 - **PNG export**: `rsvg-convert -w 1920 file.svg -o file.png` (1920px = 2x retina)
 
 ## Styles

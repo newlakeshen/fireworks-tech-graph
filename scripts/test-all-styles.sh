@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-TEST_DIR="${SKILL_DIR}/test-output"
+TEST_DIR="${FIREWORKS_OUTPUT_DIR:-/Users/bytedance/Downloads}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 
 echo -e "${BLUE}=== Fireworks Tech Graph - Batch Test ===${NC}"

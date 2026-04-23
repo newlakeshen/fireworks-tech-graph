@@ -228,12 +228,14 @@ Draw a multi-agent collaboration diagram --style glassmorphism
 
 ### Specify output path
 
+Default output for this local project checkout: `/Users/bytedance/Downloads/`
+
 ```
-Generate a Mem0 architecture diagram, output to ~/Desktop/
+Generate a Mem0 architecture diagram, output to /Users/bytedance/Downloads/
 ```
 
 ```
-Create a tool call flow diagram --output /tmp/diagrams/
+Create a tool call flow diagram --output /Users/bytedance/Downloads/
 ```
 
 ---
@@ -411,7 +413,7 @@ Built-in pattern knowledge:
 RAG Pipeline         → Query → Embed → VectorSearch → Retrieve → LLM → Response
 Agentic RAG          → adds Agent loop + Tool use
 Agentic Search       → Query → Planner → [Search/Calc/Code] → Synthesizer
-Mem0 Memory Layer    → Input → Memory Manager → [VectorDB + GraphDB] → Context
+Mem0 Memory Layer    → Input → Memory Manager → [Write: VectorDB + GraphDB] / [Read: Retrieve+Rank] → Context
 Agent Memory Types   → Sensory → Working → Episodic → Semantic → Procedural
 Multi-Agent          → Orchestrator → [SubAgent×N] → Aggregator → Output
 Tool Call Flow       → LLM → Tool Selector → Execution → Parser → LLM (loop)

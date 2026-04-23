@@ -13,7 +13,8 @@ NC='\033[0m'
 # Default values
 STYLE="1"
 WIDTH="1920"
-OUTPUT_DIR="."
+DEFAULT_OUTPUT_DIR="${FIREWORKS_OUTPUT_DIR:-/Users/bytedance/Downloads}"
+OUTPUT_DIR="$DEFAULT_OUTPUT_DIR"
 VALIDATE=true
 
 # Valid diagram types
@@ -26,13 +27,13 @@ Usage: $0 [OPTIONS]
 Options:
     -t, --type TYPE        Diagram type ($VALID_TYPES)
     -s, --style STYLE      Style number (1-7, default: 1)
-    -o, --output PATH      Output path (default: current directory)
+    -o, --output PATH      Output path (default: $DEFAULT_OUTPUT_DIR)
     -w, --width WIDTH      PNG width in pixels (default: 1920)
     --no-validate          Skip validation
     -h, --help             Show this help
 
 Examples:
-    $0 -t architecture -s 1 -o ./output/arch.svg
+    $0 -t architecture -s 1 -o /Users/bytedance/Downloads/arch.svg
     $0 -t class -s 2 -w 2400
     $0 -t sequence -s 6
 USAGE
@@ -97,11 +98,19 @@ fi
 if [ -z "${OUTPUT_PATH:-}" ]; then
     BASENAME="${TYPE}-style${STYLE}"
     SVG_FILE="${OUTPUT_DIR}/${BASENAME}.svg"
-    PNG_FILE="${OUTPUT_DIR}/${BASENAME}.png"
 else
-    SVG_FILE="$OUTPUT_PATH"
-    PNG_FILE="${OUTPUT_PATH%.svg}.png"
+    if [ -d "$OUTPUT_PATH" ] || [[ "$OUTPUT_PATH" == */ ]]; then
+        BASENAME="${TYPE}-style${STYLE}"
+        SVG_FILE="${OUTPUT_PATH%/}/${BASENAME}.svg"
+    else
+        SVG_FILE="$OUTPUT_PATH"
+    fi
 fi
+if [[ "$SVG_FILE" != *.svg ]]; then
+    SVG_FILE="${SVG_FILE}.svg"
+fi
+PNG_FILE="${SVG_FILE%.svg}.png"
+mkdir -p "$(dirname "$SVG_FILE")"
 
 echo -e "${BLUE}Generating ${TYPE} diagram (style ${STYLE})...${NC}"
 echo "Output: $SVG_FILE"

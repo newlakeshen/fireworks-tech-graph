@@ -38,7 +38,7 @@ SVG 图表生成脚本，提供自动验证和 PNG 导出。
 **选项：**
 - `-t, --type TYPE` - 图表类型（见脚本帮助）
 - `-s, --style STYLE` - 风格编号（1-7，默认：1）
-- `-o, --output PATH` - 输出路径（默认：当前目录）
+- `-o, --output PATH` - 输出路径（默认：`/Users/bytedance/Downloads`）
 - `-w, --width WIDTH` - PNG 宽度（像素，默认：1920）
 - `--no-validate` - 跳过验证
 - `-h, --help` - 显示帮助
@@ -107,7 +107,7 @@ python3 ./generate-from-template.py memory ./output/mem0.svg '{
 - 检查所有风格的参考文件
 - 渲染 `fixtures/*.json` 回归样例
 - 验证生成出的 SVG 文件
-- 导出 PNG 文件到 `test-output/` 目录
+- 导出 PNG 文件到 `/Users/bytedance/Downloads/`
 - 生成测试报告
 
 **输出：**
@@ -150,7 +150,7 @@ fireworks-tech-graph/
 │   ├── generate-diagram.sh    # SVG 验证与 PNG 导出
 │   ├── generate-from-template.py # 模板化生成 SVG
 │   └── test-all-styles.sh     # 批量测试
-└── test-output/               # 测试输出目录（自动创建）
+└── （图片默认输出到 /Users/bytedance/Downloads）
 ```
 
 ## 使用场景
@@ -167,7 +167,7 @@ cd ~/.claude/skills/fireworks-tech-graph/scripts
 1. 使用 Claude Code 生成 SVG 内容
 2. 运行验证和导出：
    ```bash
-   ./generate-diagram.sh -t architecture -s 1 -o ./output/arch.svg
+   ./generate-diagram.sh -t architecture -s 1 -o /Users/bytedance/Downloads/arch.svg
    ```
 
 ### 场景 3：批量测试所有风格
@@ -181,11 +181,11 @@ cd ~/.claude/skills/fireworks-tech-graph/scripts
 1. 读取 `../fixtures/*.json`
 2. 按 `template_type + style` 调用 `generate-from-template.py`
 3. 运行 `validate-svg.sh`
-4. 导出 PNG 到 `../test-output/`
+4. 导出 PNG 到 `/Users/bytedance/Downloads/`
 
 查看测试输出：
 ```bash
-ls -lh ../test-output/
+ls -lh /Users/bytedance/Downloads/
 ```
 
 ## 故障排除
